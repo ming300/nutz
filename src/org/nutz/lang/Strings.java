@@ -275,9 +275,7 @@ public class Strings {
      * @return 是否以特殊字符结尾
      */
     public static boolean endsWithChar(String s, char c) {
-        return null != s ? (s.length() == 0 ? false
-                                           : s.charAt(s.length() - 1) == c)
-                        : false;
+        return null != s ? (s.length() == 0 ? false : s.charAt(s.length() - 1) == c) : false;
     }
 
     /**
@@ -530,9 +528,7 @@ public class Strings {
         int len = s.length();
         if (len >= width)
             return s;
-        return new StringBuilder().append(dup(c, width - len))
-                                  .append(s)
-                                  .toString();
+        return new StringBuilder().append(dup(c, width - len)).append(s).toString();
     }
 
     /**
@@ -553,9 +549,7 @@ public class Strings {
         int length = s.length();
         if (length >= width)
             return s;
-        return new StringBuilder().append(s)
-                                  .append(dup(c, width - length))
-                                  .toString();
+        return new StringBuilder().append(s).append(dup(c, width - length)).toString();
     }
 
     /**
@@ -748,8 +742,7 @@ public class Strings {
      * @return 新字符串
      */
     public static String removeFirst(String str, char c) {
-        return (Strings.isEmpty(str) || c != str.charAt(0)) ? str
-                                                           : str.substring(1);
+        return (Strings.isEmpty(str) || c != str.charAt(0)) ? str : str.substring(1);
     }
 
     /**
@@ -944,4 +937,55 @@ public class Strings {
         return Integer.parseInt(hex, 16);
     }
 
+    /**
+     * 使用给定的分隔符, 将一个数组拼接成字符串
+     * 
+     * @param sp
+     *            分隔符
+     * @param array
+     *            要拼接的数组
+     * @return 拼接好的字符串
+     */
+    public static <T> String join(String sp, T... array) {
+        return Lang.concat(sp, array).toString();
+    }
+
+    /**
+     * 将一个字节数变成人类容易识别的显示字符串，比如 1.5M 等
+     * 
+     * @param size
+     *            字节数
+     * @param SZU
+     *            千的单位，可能为 1024 或者 1000
+     * @return 人类容易阅读的字符串
+     */
+    private static String _formatSizeForRead(long size, double SZU) {
+        if (size < SZU) {
+            return String.format("%d bytes", size);
+        }
+        double n = (double) size / SZU;
+        if (n < SZU) {
+            return String.format("%5.2f KB", n);
+        }
+        n = n / SZU;
+        if (n < SZU) {
+            return String.format("%5.2f MB", n);
+        }
+        n = n / SZU;
+        return String.format("%5.2f GB", n);
+    }
+
+    /**
+     * @see #_formatSizeForRead(long, double)
+     */
+    public static String formatSizeForReadBy1024(long size) {
+        return _formatSizeForRead(size, 1024);
+    }
+
+    /**
+     * @see #_formatSizeForRead(long, double)
+     */
+    public static String formatSizeForReadBy1000(long size) {
+        return _formatSizeForRead(size, 1000);
+    }
 }

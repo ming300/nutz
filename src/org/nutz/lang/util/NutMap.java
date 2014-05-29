@@ -3,10 +3,10 @@ package org.nutz.lang.util;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 
 import org.nutz.castor.Castors;
 import org.nutz.lang.Each;
@@ -21,7 +21,7 @@ import org.nutz.lang.Strings;
  * @author zozoh(zozohtnt@gmail.com)
  */
 @SuppressWarnings("serial")
-public class NutMap extends TreeMap<String, Object> {
+public class NutMap extends LinkedHashMap<String, Object> {
 
     public static NutMap WRAP(Map<String, Object> map) {
         if (null == map)
@@ -94,9 +94,16 @@ public class NutMap extends TreeMap<String, Object> {
         return getString(key, null);
     }
 
+    @SuppressWarnings("rawtypes")
     public String getString(String key, String dft) {
         Object v = get(key);
-        return null == v ? dft : Castors.me().castTo(v, String.class);
+        if (v == null)
+            return dft;
+        if (v instanceof List) {
+            v = ((List) v).iterator().next();
+        }
+        // by wendal : 这还有必要castTo么?
+        return Castors.me().castTo(v, String.class);
     }
 
     public Date getTime(String key) {
@@ -201,12 +208,7 @@ public class NutMap extends TreeMap<String, Object> {
     }
 
     /**
-     * 为 Map 增加一个名值对。
-     * <ul>
-     * <li>如果该键不存在，则添加对象。
-     * <li>如果存在并且是 List，则添加到 List。
-     * <li>创建一个 List ，并添加对象
-     * </ul>
+     * 为 Map 增加一个名值对。如果同名已经有值了，那么会将两个值合并成一个列表
      * 
      * @param key
      * @param value
@@ -214,9 +216,9 @@ public class NutMap extends TreeMap<String, Object> {
     @SuppressWarnings("unchecked")
     public NutMap addv(String key, Object value) {
         Object obj = get(key);
-        if (null == obj)
+        if (null == obj) {
             put(key, value);
-        else if (obj instanceof List<?>)
+        } else if (obj instanceof List<?>)
             ((List<Object>) obj).add(value);
         else {
             List<Object> list = new LinkedList<Object>();
@@ -234,8 +236,8 @@ public class NutMap extends TreeMap<String, Object> {
     public NutMap putv(String key, Object value) {
         return addv(key, value);
     }
-    
-    public NutMap setv(String key, Object value){
+
+    public NutMap setv(String key, Object value) {
         this.put(key, value);
         return this;
     }

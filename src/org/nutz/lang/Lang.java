@@ -26,6 +26,7 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -35,6 +36,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.ParserConfigurationException;
 
@@ -1247,10 +1249,24 @@ public abstract class Lang {
     /**
      * 根据一段 JSON 字符串，生产一个新的上下文对象
      * 
+     * @param fmt
+     *            JSON 字符串模板
+     * @param args
+     *            模板参数
+     * 
+     * @return 一个新创建的上下文对象
+     */
+    public static Context contextf(String fmt, Object... args) {
+        return context(Lang.mapf(fmt, args));
+    }
+
+    /**
+     * 根据一段 JSON 字符串，生产一个新的上下文对象
+     * 
      * @return 一个新创建的上下文对象
      */
     public static Context context(String str) {
-        return context().putAll(map(str));
+        return context(map(str));
     }
 
     /**
@@ -2261,5 +2277,78 @@ public abstract class Lang {
             synchronized (lock) {
                 lock.notifyAll();
             }
+    }
+
+    public static void runInAnThread(Runnable runnable) {
+        new Thread(runnable).start();
+    }
+
+    /**
+     * map对象浅过滤,返回值是一个新的map
+     * 
+     * @param source
+     *            原始的map对象
+     * @param prefix
+     *            包含什么前缀,并移除前缀
+     * @param include
+     *            正则表达式 仅包含哪些key(如果有前缀要求,则已经移除了前缀)
+     * @param exclude
+     *            正则表达式 排除哪些key(如果有前缀要求,则已经移除了前缀)
+     * @param map
+     *            映射map, 原始key--目标key (如果有前缀要求,则已经移除了前缀)
+     * @return 经过过滤的map,与原始map不是同一个对象
+     */
+    public static Map<String, Object> filter(Map<String, Object> source,
+                                             String prefix,
+                                             String include,
+                                             String exclude,
+                                             Map<String, String> keyMap) {
+        LinkedHashMap<String, Object> dst = new LinkedHashMap<String, Object>();
+        if (source == null || source.isEmpty())
+            return dst;
+
+        Pattern includePattern = include == null ? null
+                                                : Pattern.compile(include);
+        Pattern excludePattern = exclude == null ? null
+                                                : Pattern.compile(exclude);
+
+        for (Entry<String, Object> en : source.entrySet()) {
+            String key = en.getKey();
+            if (prefix != null) {
+                if (key.startsWith(prefix))
+                    key = key.substring(prefix.length());
+                else
+                    continue;
+            }
+            if (includePattern != null && !includePattern.matcher(key).find())
+                continue;
+            if (excludePattern != null && excludePattern.matcher(key).find())
+                continue;
+            if (keyMap != null && keyMap.containsKey(key))
+                dst.put(keyMap.get(key), en.getValue());
+            else
+                dst.put(key, en.getValue());
+        }
+        return dst;
+    }
+
+    /**
+     * 获得访问者的IP地址, 反向代理过的也可以获得
+     * 
+     * @param request
+     * @return
+     */
+    public static String getIP(HttpServletRequest request) {
+        String ip = request.getHeader("x-forwarded-for");
+        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("Proxy-Client-IP");
+        }
+        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("WL-Proxy-Client-IP");
+        }
+        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getRemoteAddr();
+        }
+        return ip;
     }
 }
